@@ -10,7 +10,9 @@
 
 void invalid_input(){
 	printf("\nWrong number of arguments provided. This is the format\n");
-	printf("./Transparency_Remover --input-image [png_filename_1]--output-image [png_filename_2]\n");
+	printf("./Transparency_Remover --input-image [png_filename_1] --output-image [png_filename_2] --mode [0 or 1]\n");
+	printf("Mode 0 will set all partially transparent pixels to fully transparent\n");
+	printf("and mode 1 will make all fully transparent pixels the same\n");
 
 	exit(1);
 }
@@ -21,12 +23,20 @@ bool string_equals(char * a, char * b){
 }
 
 int main(int argC, char ** argV){
+	int mode = -1;
+
 	bool flag_input_image = false;
 	bool flag_output_image = false;
 	uint8_t input_image_index = 0;
 	uint8_t output_image_index = 0;
 	for(int i = 1; i < argC; i++){
-		if(string_equals(argV[i], "--input-image")){
+		if(string_equals(argV[i], "--mode")){
+			if(++i >= argC || mode != -1){
+				invalid_input();
+			}
+			mode = atoi(argV[i]);
+		}
+		else if(string_equals(argV[i], "--input-image")){
 			if(++i >= argC){
 				invalid_input();
 			}
@@ -43,7 +53,7 @@ int main(int argC, char ** argV){
 	}
 
 	//A file path is not set, can't continue
-	if(!flag_input_image || !flag_output_image){
+	if(mode != -1 || !flag_input_image || !flag_output_image){
 		invalid_input();
 	}
 
@@ -56,10 +66,17 @@ int main(int argC, char ** argV){
 
 			png_bytep px = &(p_det.row_pointers[y][x * 4]);
 
-			if(px[3] == 0){
-				px[0] = 0;
-				px[1] = 0;
-				px[2] = 0;
+			if(mode == 0){
+				if(px[3] != 255){
+					px[3] = 0;
+				}
+			}
+			else if(mode == 1){
+				if(px[3] == 0){
+					px[0] = 0;
+					px[1] = 0;
+					px[2] = 0;
+				}
 			}
 		}
 	}
